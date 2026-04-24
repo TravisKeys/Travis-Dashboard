@@ -238,6 +238,27 @@ function loadPulseState() {
   }
 }
 
+function pulseLabSources(lab) {
+  return Array.isArray(lab.sources) && lab.sources.length ? lab.sources : ['gnews', 'hn'];
+}
+
+// Announcement keyword scoring — kept in sync with apps/pulse.html
+const PULSE_ANNOUNCE = ['announce', 'announces', 'announced', 'announcing', 'announcement', 'launch', 'launches', 'launched', 'launching', 'release', 'releases', 'released', 'releasing', 'introduce', 'introduces', 'introduced', 'introducing', 'unveil', 'unveils', 'unveiled', 'unveiling', 'debut', 'debuts', 'reveal', 'reveals', 'revealed', 'now available', 'now shipping', 'rolls out', 'rolling out', 'arrives', 'arrived'];
+const PULSE_PRODUCT = ['feature', 'features', 'model', 'models', 'device', 'devices', 'chip', 'chips', 'silicon', 'app', 'apps', 'tool', 'tools', 'api', 'sdk', 'version', 'update', 'beta', 'preview', 'agent', 'agents', 'iphone', 'ipad', 'mac', 'macbook', 'airpods', 'apple watch', 'vision pro', 'pixel', 'ios', 'macos', 'gpt', 'claude', 'gemini', 'grok', 'llama'];
+const PULSE_NEGATIVE = ['lawsuit', 'sue', 'sued', 'sues', 'settlement', 'earnings', 'revenue', 'stock', 'shares', 'fired', 'hires', 'hired', 'resigns', 'resigned', 'investigation', 'antitrust', 'opinion', 'op-ed', 'tariff'];
+
+function pulseScore(post) {
+  const text = `${post.title || ''} ${post.summary || ''}`.toLowerCase();
+  let bonus = 0;
+  if (PULSE_ANNOUNCE.some(w => text.includes(w))) bonus += 4;
+  let prod = 0;
+  for (const w of PULSE_PRODUCT) if (text.includes(w)) prod++;
+  bonus += Math.min(prod, 2);
+  if (PULSE_NEGATIVE.some(w => text.includes(w))) bonus -= 3;
+  const ageMin = post.pubDate ? (Date.now() - new Date(post.pubDate).getTime()) / 60000 : 1440 * 7;
+  return ageMin - (bonus * 120);
+}
+
 function renderPulsePreview() {
   const body = document.getElementById('pulse-body');
   const meta = document.getElementById('pulse-meta');
@@ -245,13 +266,12 @@ function renderPulsePreview() {
 
   const state = loadPulseState();
 
-  // Pull all cached posts across enabled labs and both sources
   const posts = [];
   const seen = new Set();
   if (state && state.labs && state.cache) {
     const enabledLabs = state.labs.filter(l => l.enabled);
     for (const lab of enabledLabs) {
-      for (const sourceKey of ['gnews', 'hn']) {
+      for (const sourceKey of pulseLabSources(lab)) {
         const entry = state.cache[`${lab.name}|${sourceKey}`];
         if (!entry || !entry.items) continue;
         for (const item of entry.items) {
@@ -261,7 +281,8 @@ function renderPulsePreview() {
         }
       }
     }
-    posts.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
+    // Same composite ranking as the app — announcements first
+    posts.sort((a, b) => pulseScore(a) - pulseScore(b));
   }
 
   if (!state || posts.length === 0) {
@@ -276,7 +297,7 @@ function renderPulsePreview() {
   meta.textContent = `${String(posts.length).padStart(2, '0')} POSTS`;
 
   body.innerHTML = posts.slice(0, 5).map(p => {
-    const sourceLabel = p.source === 'hn' ? 'HN' : (p.outlet || 'NEWS');
+    const sourceLabel = p.source === 'hn' ? 'HN' : (p.source === 'rss' ? (p.outlet || 'FEED') : (p.outlet || 'NEWS'));
     const parts = [sourceLabel, p.lab, formatNewsRelative(p.pubDate)].filter(Boolean);
     return `
       <a class="news-item" href="${esc(p.link)}" target="_blank" rel="noopener noreferrer">

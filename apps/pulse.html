@@ -364,7 +364,12 @@
   }
   .post-card[data-source="hn"] { border-left-color: var(--hn); }
   .post-card[data-source="gnews"] { border-left-color: var(--news); }
-  .post-card[data-source="blog"] { border-left-color: var(--accent); }
+  .post-card[data-source="rss"] { border-left-color: var(--accent); }
+  .post-card.is-announcement {
+    border-left-width: 3px;
+    border-left-color: var(--accent);
+    background: var(--bg-soft);
+  }
 
   .post-meta {
     display: flex;
@@ -384,7 +389,16 @@
   }
   .post-source-badge.hn { color: var(--hn); }
   .post-source-badge.gnews { color: var(--news); }
-  .post-source-badge.blog { color: var(--accent); }
+  .post-source-badge.rss { color: var(--accent); }
+  .post-announce-badge {
+    padding: 2px 6px;
+    background: var(--accent);
+    color: var(--bg);
+    line-height: 1;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+  }
+  [data-theme="light"] .post-announce-badge { color: #fbf8f1; }
   .post-lab { color: var(--accent); }
   .post-outlet { color: var(--ink-muted); }
   .post-time { color: var(--ink-muted); margin-left: auto; }
@@ -493,6 +507,7 @@
     <button class="filter-btn active" data-filter="all">All</button>
     <button class="filter-btn" data-filter="gnews">News</button>
     <button class="filter-btn" data-filter="hn">Hacker News</button>
+    <button class="filter-btn" data-filter="rss">Feeds</button>
   </section>
 
   <section class="feed" id="feed"></section>
@@ -510,7 +525,8 @@ const storage = {
 };
 
 // ============ Defaults ============
-// Pre-seeded: the major AI labs. Each has both Google News + HN sources.
+// Pre-seeded: the major AI labs + tech outlets.
+// Default sources: gnews + hn search. Outlets with their own RSS use 'rss'.
 const PRESET_LABS = [
   { name: 'Anthropic',       enabled: true,  source: 'preset' },
   { name: 'OpenAI',          enabled: true,  source: 'preset' },
@@ -519,10 +535,81 @@ const PRESET_LABS = [
   { name: 'Mistral AI',      enabled: true,  source: 'preset' },
   { name: 'Hugging Face',    enabled: true,  source: 'preset' },
   { name: 'Meta AI',         enabled: true,  source: 'preset' },
+  { name: 'Apple',           enabled: true,  source: 'preset' },
+  { name: 'MacRumors',       enabled: true,  source: 'preset', sources: ['rss'], rssUrl: 'https://feeds.macrumors.com/MacRumors-Front' },
   { name: 'Perplexity',      enabled: false, source: 'preset' },
   { name: 'Cohere',          enabled: false, source: 'preset' },
   { name: 'Stability AI',    enabled: false, source: 'preset' },
 ];
+
+// Default sources for any lab that doesn't override
+function getLabSources(lab) {
+  return Array.isArray(lab.sources) && lab.sources.length ? lab.sources : ['gnews', 'hn'];
+}
+
+// ============ Announcement Ranking ============
+// Boost titles that signal new features/devices/tech releases.
+// Penalize business/legal/personnel news.
+const ANNOUNCE_WORDS = [
+  'announce', 'announces', 'announced', 'announcing', 'announcement',
+  'launch', 'launches', 'launched', 'launching',
+  'release', 'releases', 'released', 'releasing',
+  'introduce', 'introduces', 'introduced', 'introducing',
+  'unveil', 'unveils', 'unveiled', 'unveiling',
+  'debut', 'debuts',
+  'reveal', 'reveals', 'revealed', 'revealing',
+  'ships', 'shipping', 'now available', 'now shipping',
+  'rolls out', 'rolling out', 'rolled out',
+  'launches with', 'arrives', 'arrived', 'arriving',
+];
+const PRODUCT_WORDS = [
+  'feature', 'features',
+  'model', 'models',
+  'device', 'devices',
+  'chip', 'chips', 'silicon', 'processor', 'soc',
+  'app', 'apps',
+  'tool', 'tools', 'toolkit',
+  'api', 'sdk',
+  'version',
+  'update', 'updates', 'updated',
+  'beta', 'preview', 'public preview', 'rolls',
+  'agent', 'agents', 'assistant',
+  'iphone', 'ipad', 'mac', 'macbook', 'airpods', 'apple watch',
+  'vision pro', 'homepod', 'pixel', 'tensor',
+  'ios', 'ipados', 'macos', 'watchos', 'visionos', 'tvos',
+  'gpt', 'claude', 'gemini', 'grok', 'llama', 'mistral',
+  'sonnet', 'opus', 'haiku', 'o1', 'o3', 'o4',
+];
+const NEGATIVE_WORDS = [
+  'lawsuit', 'sue', 'sued', 'sues', 'settlement', 'settles',
+  'earnings', 'revenue', 'stock', 'shares', 'valuation', 'ipo',
+  'fires', 'fired', 'hires', 'hired', 'resigns', 'resigned',
+  'departure', 'leaves', 'departing', 'steps down',
+  'investigation', 'investigate', 'regulator', 'regulatory',
+  'antitrust', 'monopoly', 'fine', 'fined',
+  'opinion', 'op-ed', 'editorial', 'analysis',
+  'interview', 'q&a',
+  'tariff', 'sanction',
+];
+
+function announcementScore(post) {
+  const text = `${post.title || ''} ${post.summary || ''}`.toLowerCase();
+  let bonus = 0;
+  if (ANNOUNCE_WORDS.some(w => text.includes(w))) bonus += 4;
+  let productHits = 0;
+  for (const w of PRODUCT_WORDS) if (text.includes(w)) productHits++;
+  bonus += Math.min(productHits, 2); // cap product matches at 2
+  if (NEGATIVE_WORDS.some(w => text.includes(w))) bonus -= 3;
+  return bonus;
+}
+
+// Composite rank: each bonus point ~= 2 hours of "freshness" boost.
+// Lower returned value = higher priority.
+function rankScore(post) {
+  const ageMin = post.pubDate ? (Date.now() - new Date(post.pubDate).getTime()) / 60000 : 1440 * 7;
+  const bonus = announcementScore(post);
+  return ageMin - (bonus * 120);
+}
 
 // ============ State ============
 // state.labs: [{ name, enabled, source: 'preset'|'custom' }]
@@ -613,20 +700,29 @@ function rss2json(feedUrl) {
 }
 
 // ============ Fetch ============
-async function fetchSource(lab, sourceKey) {
-  const url = sourceKey === 'gnews' ? gnewsUrl(lab) : hnUrl(lab);
-  const apiUrl = rss2json(url);
+async function fetchSource(labObj, sourceKey) {
+  const labName = labObj.name;
+  let feedUrl;
+  if (sourceKey === 'gnews') feedUrl = gnewsUrl(labName);
+  else if (sourceKey === 'hn') feedUrl = hnUrl(labName);
+  else if (sourceKey === 'rss') feedUrl = labObj.rssUrl;
+  else throw new Error(`Unknown source: ${sourceKey}`);
+  if (!feedUrl) throw new Error('Missing feed URL');
+
+  const apiUrl = rss2json(feedUrl);
   const res = await fetch(apiUrl);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
   if (data.status !== 'ok') throw new Error(data.message || 'Feed error');
+
+  const feedTitle = data.feed?.title || labName;
 
   return (data.items || []).map(raw => {
     if (sourceKey === 'gnews') {
       const { title, source } = splitTitleSource(raw.title);
       return {
         source: 'gnews',
-        lab,
+        lab: labName,
         title,
         outlet: source,
         summary: stripHtml(raw.description).slice(0, 220),
@@ -634,15 +730,25 @@ async function fetchSource(lab, sourceKey) {
         pubDate: raw.pubDate || null,
         guid: raw.guid || raw.link,
       };
-    } else {
-      // hnrss titles are clean. description has comments link.
-      const summary = stripHtml(raw.description).slice(0, 220);
+    } else if (sourceKey === 'hn') {
       return {
         source: 'hn',
-        lab,
+        lab: labName,
         title: raw.title || '',
         outlet: 'Hacker News',
-        summary,
+        summary: stripHtml(raw.description).slice(0, 220),
+        link: raw.link,
+        pubDate: raw.pubDate || null,
+        guid: raw.guid || raw.link,
+      };
+    } else {
+      // direct RSS feed
+      return {
+        source: 'rss',
+        lab: labName,
+        title: raw.title || '',
+        outlet: feedTitle,
+        summary: stripHtml(raw.description).slice(0, 220),
         link: raw.link,
         pubDate: raw.pubDate || null,
         guid: raw.guid || raw.link,
@@ -651,15 +757,15 @@ async function fetchSource(lab, sourceKey) {
   });
 }
 
-async function refreshLabSource(lab, sourceKey, force = false) {
-  const key = `${lab}|${sourceKey}`;
+async function refreshLabSource(labObj, sourceKey, force = false) {
+  const key = `${labObj.name}|${sourceKey}`;
   const entry = state.cache[key];
   const fresh = entry && entry.fetchedAt && (Date.now() - new Date(entry.fetchedAt).getTime() < CACHE_TTL_MS);
   if (fresh && !force && entry.items && !entry.error) return;
 
   state.cache[key] = { ...(entry || {}), loading: true, error: null };
   try {
-    const items = await fetchSource(lab, sourceKey);
+    const items = await fetchSource(labObj, sourceKey);
     state.cache[key] = { items, fetchedAt: new Date().toISOString(), loading: false };
   } catch (e) {
     state.cache[key] = {
@@ -673,12 +779,10 @@ async function refreshLabSource(lab, sourceKey, force = false) {
 
 async function refreshAll(force = false) {
   const enabled = state.labs.filter(l => l.enabled);
-  // Render skeletons for any cold cache
   renderFeed();
-  await Promise.all(enabled.flatMap(l => [
-    refreshLabSource(l.name, 'gnews', force),
-    refreshLabSource(l.name, 'hn', force),
-  ]));
+  await Promise.all(enabled.flatMap(lab =>
+    getLabSources(lab).map(srcKey => refreshLabSource(lab, srcKey, force))
+  ));
   saveState();
   renderFeed();
 }
@@ -689,7 +793,7 @@ function aggregatedItems() {
   const items = [];
   for (const lab of state.labs) {
     if (!lab.enabled) continue;
-    for (const sourceKey of ['gnews', 'hn']) {
+    for (const sourceKey of getLabSources(lab)) {
       if (state.filter !== 'all' && state.filter !== sourceKey) continue;
       const entry = state.cache[`${lab.name}|${sourceKey}`];
       if (!entry || !entry.items) continue;
@@ -700,21 +804,20 @@ function aggregatedItems() {
       }
     }
   }
-  items.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
+  // Composite ranking: announcements bubble up, then by recency
+  items.sort((a, b) => rankScore(a) - rankScore(b));
   return items;
 }
 
 function isAnyLoading() {
-  return state.labs.some(l => l.enabled && (
-    state.cache[`${l.name}|gnews`]?.loading || state.cache[`${l.name}|hn`]?.loading
-  ));
+  return state.labs.some(l => l.enabled && getLabSources(l).some(k => state.cache[`${l.name}|${k}`]?.loading));
 }
 
 function lastUpdatedAt() {
   let latest = 0;
   for (const lab of state.labs) {
     if (!lab.enabled) continue;
-    for (const k of ['gnews', 'hn']) {
+    for (const k of getLabSources(lab)) {
       const t = state.cache[`${lab.name}|${k}`]?.fetchedAt;
       if (t) latest = Math.max(latest, new Date(t).getTime());
     }
@@ -781,7 +884,7 @@ function renderFeed() {
     // Show errors if any source failed to load
     const errors = [];
     for (const lab of enabled) {
-      for (const k of ['gnews', 'hn']) {
+      for (const k of getLabSources(lab)) {
         const e = state.cache[`${lab.name}|${k}`]?.error;
         if (e) errors.push(`${lab.name} (${k.toUpperCase()}): ${e}`);
       }
@@ -796,10 +899,13 @@ function renderFeed() {
 }
 
 function renderPost(post) {
-  const sourceLabel = post.source === 'gnews' ? 'NEWS' : (post.source === 'hn' ? 'HN' : 'BLOG');
+  const sourceLabel = post.source === 'gnews' ? 'NEWS' : (post.source === 'hn' ? 'HN' : 'FEED');
+  const score = announcementScore(post);
+  const isAnnouncement = score >= 4;
   return `
-    <a class="post-card" data-source="${post.source}" href="${esc(post.link)}" target="_blank" rel="noopener noreferrer">
+    <a class="post-card${isAnnouncement ? ' is-announcement' : ''}" data-source="${post.source}" href="${esc(post.link)}" target="_blank" rel="noopener noreferrer">
       <div class="post-meta">
+        ${isAnnouncement ? '<span class="post-announce-badge">★ NEW</span>' : ''}
         <span class="post-source-badge ${post.source}">${sourceLabel}</span>
         <span class="post-lab">${esc(post.lab)}</span>
         ${post.outlet ? `<span class="post-outlet">${esc(post.outlet)}</span>` : ''}
@@ -818,20 +924,19 @@ function addLab(raw) {
   const name = normalizeLabName(raw);
   if (!name) return;
   if (state.labs.some(l => l.name.toLowerCase() === name.toLowerCase())) return;
-  state.labs.push({ name, enabled: true, source: 'custom' });
+  const lab = { name, enabled: true, source: 'custom' };
+  state.labs.push(lab);
   saveState();
   renderChips();
   renderFeed();
-  Promise.all([
-    refreshLabSource(name, 'gnews', true),
-    refreshLabSource(name, 'hn', true),
-  ]).then(() => { saveState(); renderFeed(); });
+  Promise.all(getLabSources(lab).map(s => refreshLabSource(lab, s, true)))
+    .then(() => { saveState(); renderFeed(); });
 }
 
 function removeLab(name) {
+  const lab = state.labs.find(l => l.name === name);
   state.labs = state.labs.filter(l => l.name !== name);
-  delete state.cache[`${name}|gnews`];
-  delete state.cache[`${name}|hn`];
+  if (lab) for (const k of getLabSources(lab)) delete state.cache[`${name}|${k}`];
   saveState();
   renderChips();
   renderFeed();
@@ -845,10 +950,8 @@ function toggleLab(name) {
   renderChips();
   renderFeed();
   if (lab.enabled) {
-    Promise.all([
-      refreshLabSource(name, 'gnews', false),
-      refreshLabSource(name, 'hn', false),
-    ]).then(() => { saveState(); renderFeed(); });
+    Promise.all(getLabSources(lab).map(s => refreshLabSource(lab, s, false)))
+      .then(() => { saveState(); renderFeed(); });
   }
 }
 

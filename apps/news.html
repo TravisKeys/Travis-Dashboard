@@ -635,7 +635,7 @@ function isWithinLast24h(iso) {
 async function fetchTopic(topic) {
   const q = encodeURIComponent(topic);
   const googleNewsUrl = `https://news.google.com/rss/search?q=${q}&hl=en-US&gl=US&ceid=US:en`;
-  const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(googleNewsUrl)}&count=30`;
+  const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(googleNewsUrl)}`;
 
   const res = await fetch(apiUrl);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);

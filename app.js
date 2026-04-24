@@ -2,6 +2,7 @@
 const THEME_KEY = 'daily-command-theme';
 const TASK_STATE_KEY = 'daily-command-state-v2';
 const NEWS_STATE_KEY = 'news-brief-state-v1';
+const PULSE_STATE_KEY = 'pulse-state-v1';
 
 // ========== Utilities ==========
 function esc(s) {
@@ -226,10 +227,73 @@ function renderNewsPreview() {
   }).join('');
 }
 
-// Stay in sync when Task Tracker or News Brief edits state in another tab
+// ========== Pulse Panel (Industry Pulse preview) ==========
+function loadPulseState() {
+  try {
+    const raw = localStorage.getItem(PULSE_STATE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+}
+
+function renderPulsePreview() {
+  const body = document.getElementById('pulse-body');
+  const meta = document.getElementById('pulse-meta');
+  if (!body || !meta) return;
+
+  const state = loadPulseState();
+
+  // Pull all cached posts across enabled labs and both sources
+  const posts = [];
+  const seen = new Set();
+  if (state && state.labs && state.cache) {
+    const enabledLabs = state.labs.filter(l => l.enabled);
+    for (const lab of enabledLabs) {
+      for (const sourceKey of ['gnews', 'hn']) {
+        const entry = state.cache[`${lab.name}|${sourceKey}`];
+        if (!entry || !entry.items) continue;
+        for (const item of entry.items) {
+          if (seen.has(item.link)) continue;
+          seen.add(item.link);
+          posts.push(item);
+        }
+      }
+    }
+    posts.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
+  }
+
+  if (!state || posts.length === 0) {
+    meta.textContent = state ? '00 POSTS' : 'Set Up';
+    body.innerHTML = `
+      <div class="panel-empty">
+        ${state ? 'No posts cached yet<br><br>Refresh in the app' : 'No labs followed<br><br>Click below to configure'}
+      </div>`;
+    return;
+  }
+
+  meta.textContent = `${String(posts.length).padStart(2, '0')} POSTS`;
+
+  body.innerHTML = posts.slice(0, 5).map(p => {
+    const sourceLabel = p.source === 'hn' ? 'HN' : (p.outlet || 'NEWS');
+    const parts = [sourceLabel, p.lab, formatNewsRelative(p.pubDate)].filter(Boolean);
+    return `
+      <a class="news-item" href="${esc(p.link)}" target="_blank" rel="noopener noreferrer">
+        <div class="news-item-meta">
+          ${parts.map((part, i) => `<span class="${i === 0 ? 'news-item-source' : ''}">${esc(part)}</span>`).join('<span>·</span>')}
+        </div>
+        <div class="news-item-title">${esc(p.title)}</div>
+      </a>
+    `;
+  }).join('');
+}
+
+// Stay in sync when any underlying app updates state in another tab
 window.addEventListener('storage', e => {
   if (e.key === TASK_STATE_KEY) renderPriorities();
   if (e.key === NEWS_STATE_KEY) renderNewsPreview();
+  if (e.key === PULSE_STATE_KEY) renderPulsePreview();
   if (e.key === THEME_KEY && e.newValue) applyTheme(e.newValue);
 });
 
@@ -249,7 +313,9 @@ updateDateTime();
 updateGreeting();
 renderPriorities();
 renderNewsPreview();
+renderPulsePreview();
 setInterval(updateDateTime, 1000);
 setInterval(updateGreeting, 60000);
 setInterval(renderPriorities, 30000);
 setInterval(renderNewsPreview, 60000);
+setInterval(renderPulsePreview, 60000);

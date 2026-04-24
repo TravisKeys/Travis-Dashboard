@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Command — Task Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root, [data-theme="dark"] {
+    --bg: #0e1013;
+    --bg-panel: #16191d;
+    --bg-soft: #1d2126;
+    --bg-hover: #22262c;
+    --ink: #e8e6e1;
+    --ink-soft: #a8a6a1;
+    --ink-muted: #6b6966;
+    --line: #2a2e34;
+    --line-soft: #21252a;
+    --accent: #b8945f;
+    --accent-dim: #8a6d44;
+    --urgent: #9c2b2b;
+    --today: #b57832;
+    --week: #4a6b50;
+    --long: #3d5b7a;
+    --checkbox-check: var(--bg);
+    --pomo-btn-text: var(--bg);
+    --body-gradient-1: rgba(184, 148, 95, 0.04);
+    --body-gradient-2: rgba(61, 91, 122, 0.03);
+  }
+  [data-theme="light"] {
+    --bg: #f1ece2;
+    --bg-panel: #fbf8f1;
+    --bg-soft: #e9e3d5;
+    --bg-hover: #ded6c4;
+    --ink: #1a1614;
+    --ink-soft: #4a453e;
+    --ink-muted: #8a8680;
+    --line: #c8bfae;
+    --line-soft: #dcd4c2;
+    --accent: #8a6d44;
+    --accent-dim: #6b5433;
+    --urgent: #8a2424;
+    --today: #9a6428;
+    --week: #3f5a43;
+    --long: #2f4a63;
+    --checkbox-check: #fbf8f1;
+    --pomo-btn-text: #fbf8f1;
+    --body-gradient-1: rgba(138, 109, 68, 0.05);
+    --body-gradient-2: rgba(47, 74, 99, 0.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(ellipse at top left, var(--body-gradient-1), transparent 50%),
+      radial-gradient(ellipse at bottom right, var(--body-gradient-2), transparent 50%);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  .app { max-width: 1440px; margin: 0 auto; padding: 36px 44px 80px; }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 36px;
+    position: relative;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0;
+    width: 80px; height: 1px;
+    background: var(--accent);
+  }
+  .brand { display: flex; align-items: baseline; gap: 20px; }
+  .brand-mark {
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    font-size: 38px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .brand-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border-left: 1px solid var(--line);
+    padding-left: 18px;
+    font-weight: 500;
+  }
+  .header-right { text-align: right; display: flex; align-items: flex-start; gap: 18px; }
+  .header-info { text-align: right; }
+  .back-link {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    text-decoration: none;
+    border: 1px solid var(--line);
+    padding: 10px 14px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.2s;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+  .back-link:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle {
+    width: 40px;
+    height: 40px;
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .theme-toggle svg { width: 16px; height: 16px; stroke-width: 1.75; }
+  .theme-toggle .icon-sun { display: none; }
+  .theme-toggle .icon-moon { display: block; }
+  [data-theme="light"] .theme-toggle .icon-sun { display: block; }
+  [data-theme="light"] .theme-toggle .icon-moon { display: none; }
+  .date-display {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--ink-soft);
+  }
+  .time-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.18em;
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    margin-bottom: 40px;
+  }
+  .stat {
+    background: var(--bg-panel);
+    padding: 18px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    transition: background 0.15s;
+  }
+  .stat:hover { background: var(--bg-soft); }
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    font-weight: 500;
+  }
+  .stat-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+
+  .main-grid { display: grid; grid-template-columns: 1fr 340px; gap: 32px; }
+  .columns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; align-items: start; }
+
+  .column {
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .column::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 2px;
+  }
+  .column[data-cat="urgent"]::before { background: var(--urgent); }
+  .column[data-cat="today"]::before { background: var(--today); }
+  .column[data-cat="week"]::before { background: var(--week); }
+  .column[data-cat="long"]::before { background: var(--long); }
+
+  .column-header {
+    padding: 18px 18px 16px;
+    border-bottom: 1px solid var(--line-soft);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .column-title { display: flex; align-items: center; gap: 12px; }
+  .column-indicator {
+    width: 3px; height: 28px;
+    flex-shrink: 0;
+  }
+  .column[data-cat="urgent"] .column-indicator { background: var(--urgent); }
+  .column[data-cat="today"] .column-indicator { background: var(--today); }
+  .column[data-cat="week"] .column-indicator { background: var(--week); }
+  .column[data-cat="long"] .column-indicator { background: var(--long); }
+  .column-name {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .column-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-muted);
+    letter-spacing: 0.12em;
+    margin-top: 3px;
+    text-transform: uppercase;
+  }
+
+  .column-header-right { display: flex; align-items: center; gap: 12px; }
+  .column-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    padding: 3px 10px;
+    min-width: 28px;
+    text-align: center;
+    font-weight: 600;
+  }
+
+  .add-btn {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--ink-muted);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    padding-bottom: 1px;
+    font-weight: 400;
+  }
+  .add-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--bg-soft);
+  }
+
+  .add-row {
+    display: none;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--line-soft);
+    gap: 8px;
+    align-items: center;
+    background: var(--bg-soft);
+  }
+  .add-row.visible { display: flex; }
+  .add-row input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    padding: 4px 0;
+    outline: none;
+  }
+  .add-row input::placeholder { color: var(--ink-muted); }
+  .add-row-cancel {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ink-muted);
+    font-size: 18px;
+    line-height: 1;
+    padding: 0 2px;
+    transition: color 0.15s;
+  }
+  .add-row-cancel:hover { color: var(--urgent); }
+
+  .task-list { padding: 2px 0; }
+
+  .empty-state {
+    padding: 36px 20px;
+    text-align: center;
+    color: var(--ink-muted);
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .task {
+    padding: 11px 18px 11px 8px;
+    border-bottom: 1px solid var(--line-soft);
+    transition: background 0.12s;
+    position: relative;
+  }
+  .task:last-child { border-bottom: none; }
+  .task:hover { background: var(--bg-soft); }
+  .task.expanded { background: var(--bg-soft); }
+  .task.expanded::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--accent);
+  }
+  .task.dragging {
+    opacity: 0.4;
+    background: var(--bg-hover);
+  }
+  .task.drag-over-top { box-shadow: inset 0 2px 0 var(--accent); }
+  .task.drag-over-bottom { box-shadow: inset 0 -2px 0 var(--accent); }
+
+  .drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    flex-shrink: 0;
+    cursor: grab;
+    color: var(--ink-muted);
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+    align-self: stretch;
+    margin-top: -11px;
+    margin-bottom: -11px;
+    padding: 11px 0;
+    user-select: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1;
+    letter-spacing: -2px;
+  }
+  .drag-handle:hover { color: var(--accent); }
+  .drag-handle:active { cursor: grabbing; }
+  .task:hover .drag-handle { opacity: 1; }
+  .task.dragging .drag-handle { cursor: grabbing; opacity: 1; color: var(--accent); }
+
+  .task-main { display: flex; align-items: flex-start; gap: 10px; }
+
+  .checkbox {
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--line);
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 2px;
+    position: relative;
+    transition: all 0.15s;
+    background: var(--bg);
+  }
+  .checkbox:hover { border-color: var(--accent); }
+  .checkbox.checked { background: var(--accent); border-color: var(--accent); }
+  .checkbox.checked::after {
+    content: '';
+    position: absolute;
+    left: 4px; top: 1px;
+    width: 5px; height: 9px;
+    border: solid var(--checkbox-check);
+    border-width: 0 1.5px 1.5px 0;
+    transform: rotate(45deg);
+  }
+
+  .task-body { flex: 1; min-width: 0; }
+  .task-text {
+    font-size: 14px;
+    word-wrap: break-word;
+    cursor: text;
+    color: var(--ink);
+    font-weight: 400;
+  }
+  .task-text.done { color: var(--ink-muted); text-decoration: line-through; }
+  .task-text[contenteditable="true"] { outline: none; background: var(--bg); padding: 2px 6px; border: 1px solid var(--accent-dim); }
+
+  .task-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
+  .task:hover .task-actions { opacity: 1; }
+  .task-btn {
+    background: none;
+    border: 1px solid var(--line);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: var(--ink-muted);
+    padding: 3px 8px;
+    transition: all 0.15s;
+    font-weight: 600;
+  }
+  .task-btn:hover { background: var(--urgent); color: var(--ink); border-color: var(--urgent); }
+
+  .subtask-zone {
+    display: none;
+    margin-top: 10px;
+    margin-left: 28px;
+    padding-left: 14px;
+    border-left: 1px solid var(--line);
+  }
+  .task.expanded .subtask-zone { display: block; }
+
+  .subtask { display: flex; align-items: flex-start; gap: 10px; padding: 5px 0; }
+  .checkbox.small { width: 12px; height: 12px; border-width: 1px; }
+  .checkbox.small.checked::after { left: 2.5px; top: 0; width: 4px; height: 7px; border-width: 0 1px 1px 0; }
+  .subtask-text { font-size: 13px; color: var(--ink-soft); flex: 1; }
+  .subtask-text.done { text-decoration: line-through; color: var(--ink-muted); }
+  .subtask-text[contenteditable="true"] { outline: none; background: var(--bg); padding: 2px 6px; border: 1px solid var(--accent-dim); }
+  .subtask-del {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ink-muted);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .subtask:hover .subtask-del { opacity: 1; }
+  .subtask-del:hover { color: var(--urgent); }
+
+  .subtask-input-row { margin-top: 8px; display: flex; gap: 8px; align-items: center; }
+  .subtask-input-row::before {
+    content: '+';
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .subtask-input-row input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    outline: none;
+    padding: 2px 0;
+  }
+  .subtask-input-row input::placeholder { color: var(--ink-muted); }
+
+  .sidebar { display: flex; flex-direction: column; gap: 20px; }
+  .panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    position: relative;
+  }
+  .panel-header {
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--line-soft);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .panel-title {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .panel-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .pomodoro { padding: 28px 20px 24px; text-align: center; }
+  .pomo-mode-switcher {
+    display: flex;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .pomo-mode {
+    flex: 1;
+    background: var(--bg);
+    border: none;
+    padding: 10px 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 600;
+  }
+  .pomo-mode:hover { color: var(--ink-soft); }
+  .pomo-mode.active { background: var(--accent); color: var(--pomo-btn-text); }
+  .pomo-time {
+    font-family: 'Playfair Display', serif;
+    font-size: 76px;
+    font-weight: 400;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    margin: 12px 0 6px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  .pomo-status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 22px;
+    font-weight: 500;
+  }
+  .pomo-controls { display: flex; gap: 8px; justify-content: center; }
+  .pomo-btn {
+    background: var(--accent);
+    color: var(--pomo-btn-text);
+    border: none;
+    padding: 11px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 700;
+  }
+  .pomo-btn:hover { background: var(--accent-dim); }
+  .pomo-btn.secondary {
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+  }
+  .pomo-btn.secondary:hover { background: var(--bg-soft); color: var(--ink); border-color: var(--accent); }
+  .pomo-count {
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line-soft);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .pomo-count strong { color: var(--accent); font-weight: 700; }
+
+  .archive-panel { margin-top: 32px; }
+  .archive-list { max-height: 520px; overflow-y: auto; }
+  .archive-group { border-bottom: 1px solid var(--line-soft); }
+  .archive-group:last-child { border-bottom: none; }
+  .archive-date {
+    padding: 11px 22px 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--bg-soft);
+    font-weight: 600;
+  }
+  .archive-item {
+    padding: 10px 22px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--line-soft);
+  }
+  .archive-cat { width: 6px; height: 6px; margin-top: 7px; flex-shrink: 0; }
+  .archive-text { flex: 1; text-decoration: line-through; }
+  .archive-restore {
+    background: none;
+    border: 1px solid var(--line);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: var(--ink-muted);
+    padding: 3px 8px;
+    opacity: 0;
+    transition: all 0.15s;
+    font-weight: 600;
+  }
+  .archive-item:hover .archive-restore { opacity: 1; }
+  .archive-restore:hover { color: var(--accent); border-color: var(--accent); }
+  .clear-archive {
+    padding: 12px 22px;
+    text-align: center;
+    border-top: 1px solid var(--line-soft);
+    background: var(--bg-soft);
+  }
+  .clear-archive button {
+    background: none;
+    border: 1px solid var(--line);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    padding: 6px 14px;
+    transition: all 0.15s;
+    font-weight: 600;
+  }
+  .clear-archive button:hover { color: var(--urgent); border-color: var(--urgent); }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  .task, .subtask, .archive-item { animation: fadeIn 0.2s ease-out; }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--line); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
+
+  @media (max-width: 1100px) { .main-grid { grid-template-columns: 1fr; } .sidebar { order: -1; } .pomo-time { font-size: 62px; } }
+  @media (max-width: 700px) { .app { padding: 20px; } .columns { grid-template-columns: 1fr; } .stats-bar { grid-template-columns: repeat(2, 1fr); } header { flex-direction: column; align-items: flex-start; gap: 12px; } .header-right { text-align: left; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="brand-mark">Task Tracker</div>
+      <div class="brand-sub">Executive Ops</div>
+    </div>
+    <div class="header-right">
+      <div class="header-info">
+        <div class="date-display" id="dateDisplay">—</div>
+        <div class="time-display" id="timeDisplay">—</div>
+      </div>
+      <a href="../index.html" class="back-link" title="Return to dashboard">← Dashboard</a>
+      <button class="theme-toggle" id="themeToggle" title="Toggle theme" aria-label="Toggle theme">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-label">Active</div><div class="stat-value" id="statActive">0</div></div>
+    <div class="stat"><div class="stat-label">Closed Today</div><div class="stat-value" id="statToday">0</div></div>
+    <div class="stat"><div class="stat-label">Total Archived</div><div class="stat-value" id="statArchive">0</div></div>
+    <div class="stat"><div class="stat-label">Deep Work</div><div class="stat-value" id="statPomos">0</div></div>
+    <div class="stat"><div class="stat-label">Week Total</div><div class="stat-value" id="statPomosToday">0</div></div>
+  </div>
+
+  <div class="main-grid">
+    <div class="columns" id="columns"></div>
+    <aside class="sidebar">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Deep Work Timer</div>
+          <div class="panel-sub" id="pomoRound">Round 01</div>
+        </div>
+        <div class="pomodoro">
+          <div class="pomo-mode-switcher">
+            <button class="pomo-mode active" data-mode="focus">Focus 20</button>
+            <button class="pomo-mode" data-mode="short">Short 5</button>
+            <button class="pomo-mode" data-mode="long">Long 10</button>
+          </div>
+          <div class="pomo-time" id="pomoTime">20:00</div>
+          <div class="pomo-status" id="pomoStatus">Standing By</div>
+          <div class="pomo-controls">
+            <button class="pomo-btn" id="pomoStart">Engage</button>
+            <button class="pomo-btn secondary" id="pomoReset">Reset</button>
+          </div>
+          <div class="pomo-count">Sessions Completed · <strong id="pomoTotal">0</strong></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="panel archive-panel">
+    <div class="panel-header">
+      <div class="panel-title">Archive</div>
+      <div class="panel-sub" id="archiveCount">0 items</div>
+    </div>
+    <div class="archive-list" id="archiveList"><div class="empty-state">Completed tasks appear here</div></div>
+    <div class="clear-archive" id="clearArchiveWrap" style="display:none">
+      <button id="clearArchive">Purge Archive</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Persistent localStorage wrapper — replaces the prior window.storage API.
+const storage = {
+  get(key) {
+    try { return { value: localStorage.getItem(key) }; } catch (e) { return { value: null }; }
+  },
+  set(key, value) {
+    try { localStorage.setItem(key, value); } catch (e) {}
+  }
+};
+
+const CATEGORIES = [
+  { key: 'urgent', name: 'Urgent', meta: 'Act Now' },
+  { key: 'today', name: 'Today', meta: 'End of Day' },
+  { key: 'week', name: 'This Week', meta: 'Seven Days' },
+  { key: 'long', name: 'Strategic', meta: 'Long Horizon' }
+];
+
+let state = {
+  tasks: { urgent: [], today: [], week: [], long: [] },
+  archive: [],
+  pomodoro: { total: 0, weekCount: 0, weekStart: weekStartString(), round: 1 }
+};
+
+function saveState() {
+  storage.set('daily-command-state-v2', JSON.stringify(state));
+}
+
+function loadState() {
+  const r = storage.get('daily-command-state-v2');
+  if (r && r.value) {
+    try {
+      const loaded = JSON.parse(r.value);
+      state = { ...state, ...loaded };
+      if (state.pomodoro.weekStart !== weekStartString()) {
+        state.pomodoro.weekCount = 0;
+        state.pomodoro.weekStart = weekStartString();
+      }
+      return;
+    } catch (e) {}
+  }
+  const old = storage.get('daily-command-state');
+  if (old && old.value) {
+    try {
+      const loaded = JSON.parse(old.value);
+      state = { ...state, ...loaded };
+      if (state.pomodoro.weekStart !== weekStartString()) {
+        state.pomodoro.weekCount = 0;
+        state.pomodoro.weekStart = weekStartString();
+      }
+    } catch (e) {}
+  }
+}
+
+function todayString() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function weekStartString() {
+  const d = new Date(); const day = d.getDay(); d.setDate(d.getDate() - day);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function formatDate(d) { return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }); }
+function formatDateShort(iso) { const d = new Date(iso); return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function esc(s) { return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('dateDisplay').textContent = formatDate(now);
+  document.getElementById('timeDisplay').textContent = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+}
+
+let expandedTaskId = null;
+
+function renderColumns() {
+  const container = document.getElementById('columns');
+  container.innerHTML = CATEGORIES.map(cat => {
+    const tasks = state.tasks[cat.key] || [];
+    const activeCount = tasks.filter(t => !t.done).length;
+    return `
+      <section class="column" data-cat="${cat.key}">
+        <div class="column-header">
+          <div class="column-title">
+            <span class="column-indicator"></span>
+            <div>
+              <div class="column-name">${cat.name}</div>
+              <div class="column-meta">${cat.meta}</div>
+            </div>
+          </div>
+          <div class="column-header-right">
+            <div class="column-count">${String(activeCount).padStart(2,'0')}</div>
+            <button class="add-btn" data-cat="${cat.key}" title="Add task">+</button>
+          </div>
+        </div>
+        <div class="add-row" id="add-row-${cat.key}">
+          <input type="text" placeholder="New directive…" data-cat="${cat.key}" class="task-add-input">
+          <button class="add-row-cancel" data-cat="${cat.key}">×</button>
+        </div>
+        <div class="task-list">
+          ${tasks.length === 0 ? '<div class="empty-state">No active items</div>' : tasks.map(t => renderTask(t, cat.key)).join('')}
+        </div>
+      </section>
+    `;
+  }).join('');
+  attachListeners();
+  updateStats();
+}
+
+function renderTask(task, cat) {
+  const subtasks = task.subtasks || [];
+  const isExpanded = expandedTaskId === task.id;
+  return `
+    <div class="task${isExpanded ? ' expanded' : ''}" data-id="${task.id}" data-cat="${cat}" draggable="true">
+      <div class="task-main">
+        <div class="drag-handle" data-action="drag" title="Drag to reorder">⋮⋮</div>
+        <div class="checkbox${task.done ? ' checked' : ''}" data-action="toggle"></div>
+        <div class="task-body">
+          <div class="task-text${task.done ? ' done' : ''}" data-action="edit">${esc(task.text)}</div>
+          <div class="subtask-zone">
+            ${subtasks.map(st => `
+              <div class="subtask" data-sid="${st.id}">
+                <div class="checkbox small${st.done ? ' checked' : ''}" data-action="toggle-sub"></div>
+                <div class="subtask-text${st.done ? ' done' : ''}" data-action="edit-sub">${esc(st.text)}</div>
+                <button class="subtask-del" data-action="del-sub">×</button>
+              </div>
+            `).join('')}
+            ${!task.done ? `<div class="subtask-input-row"><input type="text" placeholder="Add sub-item…" class="subtask-add-input"></div>` : ''}
+          </div>
+        </div>
+        <div class="task-actions">
+          <button class="task-btn" data-action="delete">DELETE</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function attachListeners() {
+  document.querySelectorAll('.add-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cat = btn.dataset.cat;
+      const row = document.getElementById(`add-row-${cat}`);
+      row.classList.add('visible');
+      row.querySelector('input').focus();
+    });
+  });
+
+  document.querySelectorAll('.add-row-cancel').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cat = btn.dataset.cat;
+      const row = document.getElementById(`add-row-${cat}`);
+      row.classList.remove('visible');
+      row.querySelector('input').value = '';
+    });
+  });
+
+  document.querySelectorAll('.task-add-input').forEach(input => {
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && input.value.trim()) {
+        addTask(input.dataset.cat, input.value.trim());
+        input.value = '';
+        const row = document.getElementById(`add-row-${input.dataset.cat}`);
+        row.classList.remove('visible');
+      }
+      if (e.key === 'Escape') {
+        const row = document.getElementById(`add-row-${input.dataset.cat}`);
+        row.classList.remove('visible');
+        input.value = '';
+      }
+    });
+  });
+
+  document.querySelectorAll('.column').forEach(col => {
+    col.addEventListener('click', handleColClick);
+    col.addEventListener('keydown', handleColKeydown);
+  });
+
+  document.querySelectorAll('.task').forEach(taskEl => {
+    taskEl.addEventListener('dragstart', handleDragStart);
+    taskEl.addEventListener('dragend', handleDragEnd);
+    taskEl.addEventListener('dragover', handleDragOver);
+    taskEl.addEventListener('dragleave', handleDragLeave);
+    taskEl.addEventListener('drop', handleDrop);
+  });
+}
+
+let draggedTaskId = null;
+let draggedTaskCat = null;
+
+function handleDragStart(e) {
+  if (e.target.closest('[contenteditable="true"]') || e.target.tagName === 'INPUT') {
+    e.preventDefault();
+    return;
+  }
+  draggedTaskId = this.dataset.id;
+  draggedTaskCat = this.dataset.cat;
+  this.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', draggedTaskId);
+}
+
+function handleDragEnd(e) {
+  this.classList.remove('dragging');
+  document.querySelectorAll('.task').forEach(t => {
+    t.classList.remove('drag-over-top', 'drag-over-bottom');
+  });
+  draggedTaskId = null;
+  draggedTaskCat = null;
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  if (!draggedTaskId) return;
+  if (this.dataset.cat !== draggedTaskCat) return;
+  if (this.dataset.id === draggedTaskId) return;
+
+  const rect = this.getBoundingClientRect();
+  const midpoint = rect.top + rect.height / 2;
+  this.classList.remove('drag-over-top', 'drag-over-bottom');
+  if (e.clientY < midpoint) {
+    this.classList.add('drag-over-top');
+  } else {
+    this.classList.add('drag-over-bottom');
+  }
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function handleDragLeave(e) {
+  this.classList.remove('drag-over-top', 'drag-over-bottom');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (!draggedTaskId) return;
+  if (this.dataset.cat !== draggedTaskCat) return;
+  if (this.dataset.id === draggedTaskId) return;
+
+  const targetId = this.dataset.id;
+  const cat = draggedTaskCat;
+  const rect = this.getBoundingClientRect();
+  const dropAfter = (e.clientY >= rect.top + rect.height / 2);
+
+  this.classList.remove('drag-over-top', 'drag-over-bottom');
+
+  const list = state.tasks[cat];
+  const fromIdx = list.findIndex(t => t.id === draggedTaskId);
+  if (fromIdx === -1) return;
+  const [moved] = list.splice(fromIdx, 1);
+  let toIdx = list.findIndex(t => t.id === targetId);
+  if (toIdx === -1) { list.splice(fromIdx, 0, moved); return; }
+  if (dropAfter) toIdx++;
+  list.splice(toIdx, 0, moved);
+  saveState();
+  renderColumns();
+}
+
+function handleColClick(e) {
+  const taskEl = e.target.closest('.task');
+  if (!taskEl) return;
+  const action = e.target.dataset.action;
+  const taskId = taskEl.dataset.id;
+  const cat = taskEl.dataset.cat;
+
+  if (action === 'toggle') { toggleTask(cat, taskId); return; }
+  if (action === 'delete') { if (expandedTaskId === taskId) expandedTaskId = null; deleteTask(cat, taskId); return; }
+  if (action === 'edit') { makeEditable(e.target, 'task', cat, taskId); return; }
+  if (action === 'toggle-sub') { const sub = e.target.closest('.subtask'); toggleSubtask(cat, taskId, sub.dataset.sid); return; }
+  if (action === 'edit-sub') { const sub = e.target.closest('.subtask'); makeEditable(e.target, 'subtask', cat, taskId, sub.dataset.sid); return; }
+  if (action === 'del-sub') { const sub = e.target.closest('.subtask'); deleteSubtask(cat, taskId, sub.dataset.sid); return; }
+
+  if (!e.target.closest('.task-actions') && !e.target.closest('.checkbox') && !e.target.closest('.subtask-zone')) {
+    expandedTaskId = (expandedTaskId === taskId) ? null : taskId;
+    renderColumns();
+  }
+}
+
+function handleColKeydown(e) {
+  if (e.target.classList.contains('subtask-add-input') && e.key === 'Enter' && e.target.value.trim()) {
+    const taskEl = e.target.closest('.task');
+    addSubtask(taskEl.dataset.cat, taskEl.dataset.id, e.target.value.trim());
+    e.target.value = '';
+  }
+}
+
+function makeEditable(el, type, cat, taskId, subId) {
+  el.setAttribute('contenteditable', 'true');
+  el.focus();
+  const range = document.createRange(); range.selectNodeContents(el);
+  const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+  const finish = () => {
+    el.removeAttribute('contenteditable');
+    const newText = el.textContent.trim();
+    if (!newText) { el.textContent = type === 'task' ? getTask(cat,taskId)?.text : getSubtask(cat,taskId,subId)?.text; return; }
+    if (type === 'task') { const t = getTask(cat,taskId); if(t){t.text=newText; saveState();} }
+    else { const s = getSubtask(cat,taskId,subId); if(s){s.text=newText; saveState();} }
+  };
+  el.addEventListener('blur', finish, {once:true});
+  el.addEventListener('keydown', e => {
+    if (e.key==='Enter'){e.preventDefault();el.blur();}
+    if (e.key==='Escape'){el.textContent=type==='task'?getTask(cat,taskId)?.text:getSubtask(cat,taskId,subId)?.text;el.blur();}
+  });
+}
+
+function getTask(cat,id){return state.tasks[cat]?.find(t=>t.id===id);}
+function getSubtask(cat,taskId,subId){return getTask(cat,taskId)?.subtasks?.find(s=>s.id===subId);}
+
+function addTask(cat, text) {
+  state.tasks[cat].unshift({id:uid(),text,done:false,subtasks:[],createdAt:new Date().toISOString()});
+  saveState(); renderColumns();
+}
+
+function toggleTask(cat, id) {
+  const task = getTask(cat,id); if(!task) return;
+  task.done = !task.done;
+  if (task.done) {
+    state.archive.unshift({...task,category:cat,completedAt:new Date().toISOString()});
+    state.tasks[cat] = state.tasks[cat].filter(t=>t.id!==id);
+    if (expandedTaskId === id) expandedTaskId = null;
+  }
+  saveState(); renderColumns(); renderArchive();
+}
+
+function deleteTask(cat,id){ state.tasks[cat]=state.tasks[cat].filter(t=>t.id!==id); saveState(); renderColumns(); }
+
+function addSubtask(cat,taskId,text){
+  const task=getTask(cat,taskId); if(!task) return;
+  if(!task.subtasks)task.subtasks=[];
+  task.subtasks.push({id:uid(),text,done:false});
+  saveState(); renderColumns();
+}
+
+function toggleSubtask(cat,taskId,subId){
+  const sub=getSubtask(cat,taskId,subId); if(sub){sub.done=!sub.done;saveState();renderColumns();}
+}
+
+function deleteSubtask(cat,taskId,subId){
+  const task=getTask(cat,taskId); if(task){task.subtasks=task.subtasks.filter(s=>s.id!==subId);saveState();renderColumns();}
+}
+
+function renderArchive() {
+  const container = document.getElementById('archiveList');
+  const countEl = document.getElementById('archiveCount');
+  const clearWrap = document.getElementById('clearArchiveWrap');
+  countEl.textContent = `${state.archive.length} item${state.archive.length!==1?'s':''}`;
+  if (state.archive.length===0) { container.innerHTML='<div class="empty-state">Completed tasks appear here</div>'; clearWrap.style.display='none'; return; }
+  clearWrap.style.display='block';
+  const groups={};
+  state.archive.forEach(t=>{const date=t.completedAt?t.completedAt.slice(0,10):'unknown';if(!groups[date])groups[date]=[];groups[date].push(t);});
+  const today=todayString();
+  const yesterday=(()=>{const d=new Date();d.setDate(d.getDate()-1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;})();
+  container.innerHTML=Object.keys(groups).sort().reverse().map(date=>{
+    let label=formatDateShort(date);
+    if(date===today)label='Today'; else if(date===yesterday)label='Yesterday';
+    return `<div class="archive-group"><div class="archive-date">${label}</div>${groups[date].map(t=>`<div class="archive-item" data-id="${t.id}"><div class="archive-cat" style="background:var(--${t.category==='long'?'long':t.category})"></div><div class="archive-text">${esc(t.text)}</div><button class="archive-restore" data-action="restore">RESTORE</button></div>`).join('')}</div>`;
+  }).join('');
+  container.querySelectorAll('.archive-item').forEach(item=>{item.querySelector('.archive-restore').addEventListener('click',()=>restoreTask(item.dataset.id));});
+  updateStats();
+}
+
+function restoreTask(id){
+  const idx=state.archive.findIndex(t=>t.id===id); if(idx===-1) return;
+  const task=state.archive[idx]; const {category,completedAt,...rest}=task; rest.done=false;
+  state.tasks[category||'today'].unshift(rest); state.archive.splice(idx,1);
+  saveState(); renderColumns(); renderArchive();
+}
+
+document.getElementById('clearArchive').addEventListener('click',()=>{
+  if(confirm('Purge the entire archive? This action cannot be undone.')){state.archive=[];saveState();renderArchive();}
+});
+
+function updateStats(){
+  document.getElementById('statActive').textContent=String(Object.values(state.tasks).reduce((s,a)=>s+a.filter(t=>!t.done).length,0)).padStart(2,'0');
+  document.getElementById('statToday').textContent=String(state.archive.filter(t=>t.completedAt&&t.completedAt.slice(0,10)===todayString()).length).padStart(2,'0');
+  document.getElementById('statArchive').textContent=String(state.archive.length).padStart(2,'0');
+  document.getElementById('statPomos').textContent=String(state.pomodoro.total).padStart(2,'0');
+  document.getElementById('statPomosToday').textContent=String(state.pomodoro.weekCount).padStart(2,'0');
+  document.getElementById('pomoTotal').textContent=state.pomodoro.total;
+}
+
+const pomoModes={focus:{duration:20*60,label:'Deep Focus'},short:{duration:5*60,label:'Short Recovery'},long:{duration:10*60,label:'Long Recovery'}};
+let pomoState={mode:'focus',remaining:pomoModes.focus.duration,running:false,interval:null};
+
+function renderPomo(){
+  const mins=Math.floor(pomoState.remaining/60),secs=pomoState.remaining%60;
+  document.getElementById('pomoTime').textContent=`${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+  document.getElementById('pomoStatus').textContent=pomoState.running?pomoModes[pomoState.mode].label:'Standing By';
+  document.getElementById('pomoStart').textContent=pomoState.running?'Pause':'Engage';
+  document.getElementById('pomoRound').textContent=`Round ${String(state.pomodoro.round).padStart(2,'0')}`;
+  document.querySelectorAll('.pomo-mode').forEach(b=>b.classList.toggle('active',b.dataset.mode===pomoState.mode));
+  document.title=pomoState.running?`${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')} — Daily Command`:'Daily Command — Task Tracker';
+}
+
+function pomoTick(){if(pomoState.remaining<=0){pomoComplete();return;}pomoState.remaining--;renderPomo();}
+
+function pomoComplete(){
+  clearInterval(pomoState.interval);pomoState.running=false;
+  if(pomoState.mode==='focus'){
+    if(state.pomodoro.weekStart!==weekStartString()){state.pomodoro.weekCount=0;state.pomodoro.weekStart=weekStartString();}
+    state.pomodoro.total++;state.pomodoro.weekCount++;state.pomodoro.round++;
+  }
+  playDing();
+  if(Notification.permission==='granted')new Notification('Daily Command',{body:pomoState.mode==='focus'?'Session complete. Stand down for recovery.':'Recovery complete. Ready to engage.'});
+  alert(pomoState.mode==='focus'?'✓ Session complete. Stand down for recovery.':'✓ Recovery complete. Ready to engage.');
+  switchPomoMode(pomoState.mode==='focus'?(state.pomodoro.round%4===0?'long':'short'):'focus');
+  saveState();updateStats();
+}
+
+function playDing(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);
+    o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(0.3,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+1.2);o.start();o.stop(ctx.currentTime+1.2);
+    setTimeout(()=>{const o2=ctx.createOscillator(),g2=ctx.createGain();o2.connect(g2);g2.connect(ctx.destination);o2.frequency.value=1320;o2.type='sine';g2.gain.setValueAtTime(0.3,ctx.currentTime);g2.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+1.2);o2.start();o2.stop(ctx.currentTime+1.2);},200);
+  }catch(e){}
+}
+
+function switchPomoMode(mode){clearInterval(pomoState.interval);pomoState.mode=mode;pomoState.remaining=pomoModes[mode].duration;pomoState.running=false;renderPomo();}
+
+document.querySelectorAll('.pomo-mode').forEach(b=>b.addEventListener('click',()=>switchPomoMode(b.dataset.mode)));
+
+document.getElementById('pomoStart').addEventListener('click',()=>{
+  if(pomoState.running){clearInterval(pomoState.interval);pomoState.running=false;}
+  else{pomoState.running=true;pomoState.interval=setInterval(pomoTick,1000);if(Notification.permission==='default')Notification.requestPermission();}
+  renderPomo();
+});
+
+document.getElementById('pomoReset').addEventListener('click',()=>{clearInterval(pomoState.interval);pomoState.running=false;pomoState.remaining=pomoModes[pomoState.mode].duration;renderPomo();});
+
+function init(){
+  const tr = storage.get('daily-command-theme');
+  const savedTheme = (tr && tr.value) ? tr.value : 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    storage.set('daily-command-theme', next);
+  });
+
+  updateClock();setInterval(updateClock,1000);
+  loadState();renderColumns();renderArchive();renderPomo();updateStats();
+  window.addEventListener('beforeunload',e=>{if(pomoState.running){e.preventDefault();e.returnValue='';}});
+}
+init();
+</script>
+</body>
+</html>

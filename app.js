@@ -13,11 +13,11 @@ const CARDS = [
   },
   {
     title: 'Notes Vault',
-    desc: 'Quick capture, daily journal, and a searchable knowledge base.',
+    desc: 'Rich-text notes with search, starring, and full formatting controls.',
     icon: '✎',
-    href: '#',
-    status: 'Planned',
-    statusType: 'dev',
+    href: 'apps/notes.html',
+    status: 'Live',
+    statusType: 'live',
     tone: 'today',
   },
   {

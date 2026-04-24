@@ -1,6 +1,7 @@
 // ========== Storage Keys ==========
 const THEME_KEY = 'daily-command-theme';
 const TASK_STATE_KEY = 'daily-command-state-v2';
+const NEWS_STATE_KEY = 'news-brief-state-v1';
 
 // ========== Utilities ==========
 function esc(s) {
@@ -150,9 +151,85 @@ function completeTask(category, taskId) {
   renderPriorities();
 }
 
-// Stay in sync when Task Tracker edits tasks in another tab
+// ========== News Panel (News Brief preview) ==========
+function loadNewsState() {
+  try {
+    const raw = localStorage.getItem(NEWS_STATE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+}
+
+function formatNewsRelative(iso) {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return 'just now';
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  return `${Math.floor(hr / 24)}d ago`;
+}
+
+function renderNewsPreview() {
+  const body = document.getElementById('news-body');
+  const meta = document.getElementById('news-meta');
+  const state = loadNewsState();
+
+  if (!state || !state.topics || state.topics.length === 0) {
+    meta.textContent = 'Set Up';
+    body.innerHTML = `
+      <div class="panel-empty">
+        No topics set<br><br>
+        Click below to configure
+      </div>`;
+    return;
+  }
+
+  // Collect all cached articles across topics, dedupe by link, sort by recency
+  const all = [];
+  const seen = new Set();
+  for (const topic of state.topics) {
+    const entry = state.cache?.[topic];
+    if (!entry || !entry.items) continue;
+    for (const item of entry.items) {
+      if (seen.has(item.link)) continue;
+      seen.add(item.link);
+      all.push({ ...item, topic });
+    }
+  }
+  all.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
+
+  meta.textContent = `${String(all.length).padStart(2, '0')} TODAY`;
+
+  if (all.length === 0) {
+    body.innerHTML = `
+      <div class="panel-empty">
+        No articles yet<br><br>
+        Refresh in the app
+      </div>`;
+    return;
+  }
+
+  body.innerHTML = all.slice(0, 5).map(a => {
+    const parts = [a.source, formatNewsRelative(a.pubDate), a.topic].filter(Boolean);
+    return `
+      <a class="news-item" href="${esc(a.link)}" target="_blank" rel="noopener noreferrer">
+        <div class="news-item-meta">
+          ${parts.map((p, i) => `<span class="${i === 0 ? 'news-item-source' : ''}">${esc(p)}</span>`).join('<span>·</span>')}
+        </div>
+        <div class="news-item-title">${esc(a.title)}</div>
+      </a>
+    `;
+  }).join('');
+}
+
+// Stay in sync when Task Tracker or News Brief edits state in another tab
 window.addEventListener('storage', e => {
   if (e.key === TASK_STATE_KEY) renderPriorities();
+  if (e.key === NEWS_STATE_KEY) renderNewsPreview();
   if (e.key === THEME_KEY && e.newValue) applyTheme(e.newValue);
 });
 
@@ -171,6 +248,8 @@ initTheme();
 updateDateTime();
 updateGreeting();
 renderPriorities();
+renderNewsPreview();
 setInterval(updateDateTime, 1000);
 setInterval(updateGreeting, 60000);
 setInterval(renderPriorities, 30000);
+setInterval(renderNewsPreview, 60000);

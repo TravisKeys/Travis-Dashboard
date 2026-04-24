@@ -69,15 +69,15 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    padding: 28px 36px 22px;
+    padding: 18px 24px 14px;
     border-bottom: 1px solid var(--line);
     position: relative;
   }
   header::after {
     content: '';
     position: absolute;
-    bottom: -1px; left: 36px;
-    width: 80px; height: 1px;
+    bottom: -1px; left: 24px;
+    width: 64px; height: 1px;
     background: var(--accent);
   }
   .brand { display: flex; align-items: baseline; gap: 20px; }
@@ -143,7 +143,7 @@
 
   /* ============ Topic Bar ============ */
   .topic-bar {
-    padding: 24px 36px 20px;
+    padding: 14px 24px 12px;
     border-bottom: 1px solid var(--line-soft);
     background: var(--bg-panel);
   }
@@ -151,7 +151,7 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 14px;
+    margin-bottom: 10px;
   }
   .topic-bar-title {
     font-family: 'Inter', sans-serif;
@@ -173,8 +173,8 @@
   .topic-input-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 14px;
+    gap: 8px;
+    margin-bottom: 10px;
   }
   .topic-input {
     flex: 1;
@@ -256,7 +256,7 @@
   }
 
   /* ============ Feed ============ */
-  .feed { padding: 24px 36px 60px; }
+  .feed { padding: 16px 24px 40px; }
 
   .feed-empty {
     text-align: center;
@@ -285,15 +285,15 @@
   }
 
   .topic-section {
-    margin-bottom: 36px;
+    margin-bottom: 20px;
   }
   .topic-section-head {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    padding-bottom: 12px;
+    padding-bottom: 8px;
     border-bottom: 1px solid var(--line-soft);
-    margin-bottom: 18px;
+    margin-bottom: 12px;
     position: relative;
   }
   .topic-section-head::after {
@@ -305,7 +305,7 @@
   }
   .topic-section-title {
     font-family: 'Playfair Display', serif;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 500;
     color: var(--ink);
     letter-spacing: -0.005em;
@@ -339,73 +339,37 @@
 
   .articles-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 10px;
   }
 
   .article-card {
     background: var(--bg-panel);
     border: 1px solid var(--line);
+    border-left: 2px solid var(--line);
+    padding: 10px 14px 12px;
     display: flex;
     flex-direction: column;
+    gap: 6px;
     transition: all 0.15s;
-    overflow: hidden;
     text-decoration: none;
     color: inherit;
     cursor: pointer;
   }
   .article-card:hover {
     border-color: var(--accent-dim);
-    transform: translateY(-1px);
+    border-left-color: var(--accent);
     background: var(--bg-soft);
   }
+  .article-card[data-tier="1"] { border-left-color: var(--accent); }
+  .article-card[data-tier="2"] { border-left-color: var(--accent-dim); }
 
-  .article-image {
-    width: 100%;
-    height: 170px;
-    background: var(--bg-hover);
-    overflow: hidden;
-    flex-shrink: 0;
-    position: relative;
-  }
-  .article-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.4s ease;
-  }
-  .article-card:hover .article-image img { transform: scale(1.03); }
-  .article-no-image {
-    width: 100%;
-    height: 60px;
-    background: linear-gradient(135deg, var(--bg-panel), var(--bg-soft));
-    border-bottom: 1px solid var(--line-soft);
-    display: flex;
-    align-items: center;
-    padding: 0 18px;
-    flex-shrink: 0;
-  }
-  .article-no-image-mark {
-    font-family: 'Playfair Display', serif;
-    font-size: 24px;
-    color: var(--accent);
-    opacity: 0.5;
-  }
-
-  .article-body {
-    padding: 16px 18px 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    flex: 1;
-  }
   .article-meta {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 9px;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--ink-muted);
     font-weight: 600;
@@ -413,28 +377,50 @@
   .article-source { color: var(--accent); }
   .article-title {
     font-family: 'Playfair Display', serif;
-    font-size: 17px;
+    font-size: 15px;
     font-weight: 500;
     color: var(--ink);
     line-height: 1.3;
     letter-spacing: -0.005em;
   }
   .article-summary {
-    font-size: 13px;
+    font-size: 12.5px;
     color: var(--ink-soft);
-    line-height: 1.55;
+    line-height: 1.5;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    margin-top: auto;
+  }
+
+  .show-all-wrap {
+    text-align: center;
+    margin-top: 12px;
+  }
+  .show-all-btn {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    padding: 8px 22px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 600;
+  }
+  .show-all-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--bg-soft);
   }
 
   .article-skeleton {
     background: var(--bg-panel);
     border: 1px solid var(--line);
-    height: 320px;
+    height: 90px;
     position: relative;
     overflow: hidden;
   }
@@ -469,8 +455,8 @@
 
   /* ============ Responsive ============ */
   @media (max-width: 800px) {
-    header, .topic-bar, .feed { padding-left: 20px; padding-right: 20px; }
-    header::after { left: 20px; }
+    header, .topic-bar, .feed { padding-left: 16px; padding-right: 16px; }
+    header::after { left: 16px; }
     .topic-input-row { flex-wrap: wrap; }
     .articles-grid { grid-template-columns: 1fr; }
   }
@@ -539,6 +525,9 @@ const storage = {
 // state.topics: string[]
 // state.cache: { [topic]: { items: Article[], fetchedAt: ISO, error?: string } }
 let state = { topics: [], cache: {} };
+// Per-topic expansion state — in-memory only (resets on reload)
+const expandedTopics = new Set();
+const INITIAL_LIMIT = 4;
 
 function loadState() {
   const raw = storage.get(STATE_KEY);
@@ -600,26 +589,63 @@ function splitTitleSource(title) {
   return { title: title || '', source: '' };
 }
 
-function extractImage(item) {
-  if (item.thumbnail && /^https?:/.test(item.thumbnail)) return item.thumbnail;
-  if (item.enclosure && item.enclosure.link && /^https?:/.test(item.enclosure.link)) return item.enclosure.link;
-  // Try to find an <img src="..."> in description HTML
-  const html = item.description || item.content || '';
-  const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
-  if (m) return m[1];
-  return null;
+// ============ Outlet Tiers (for ranking) ============
+const OUTLET_TIER_1 = [
+  'reuters', 'bloomberg', 'associated press', 'ap news', 'ap',
+  'the new york times', 'nytimes', 'new york times',
+  'wall street journal', 'wsj',
+  'financial times', 'the economist',
+  'the washington post', 'washington post',
+  'bbc', 'bbc news'
+];
+const OUTLET_TIER_2 = [
+  'cnn', 'nbc news', 'cbs news', 'abc news', 'npr', 'cnbc', 'pbs',
+  'the guardian', 'the atlantic', 'axios', 'politico', 'the hill',
+  'time', 'newsweek', 'forbes', 'fortune', 'usa today',
+  "barron's", 'barrons', 'the telegraph', 'the independent',
+  'los angeles times', 'la times', 'nature', 'science magazine'
+];
+const OUTLET_TIER_3 = [
+  'business insider', 'vox', 'the verge', 'techcrunch',
+  'wired', 'engadget', 'ars technica', 'the information',
+  'quartz', 'mashable', 'cnet', 'zdnet', 'fast company',
+  'variety', 'the hollywood reporter', 'espn', 'bbc sport'
+];
+
+function outletTier(source) {
+  if (!source) return 4;
+  const s = source.toLowerCase().trim();
+  if (OUTLET_TIER_1.some(n => s.includes(n))) return 1;
+  if (OUTLET_TIER_2.some(n => s.includes(n))) return 2;
+  if (OUTLET_TIER_3.some(n => s.includes(n))) return 3;
+  return 4;
+}
+
+// Rank: (1) outlet tier ascending, (2) topic keywords matching title,
+// (3) recency descending
+function rankArticles(items, topic) {
+  const topicWords = (topic || '').toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  const score = (a) => {
+    const tier = outletTier(a.source);
+    const title = (a.title || '').toLowerCase();
+    const matched = topicWords.filter(w => title.includes(w)).length;
+    const matchBonus = topicWords.length > 0 ? (matched / topicWords.length) : 0;
+    const ageMin = a.pubDate ? (Date.now() - new Date(a.pubDate).getTime()) / 60000 : 1440;
+    // Lower score = higher priority
+    return (tier * 1000) - (matchBonus * 100) + Math.min(ageMin, 1440) / 10;
+  };
+  return items.slice().sort((a, b) => score(a) - score(b));
 }
 
 function normalizeItem(raw) {
   const { title, source } = splitTitleSource(raw.title);
-  const summary = stripHtml(raw.description).slice(0, 260);
+  const summary = stripHtml(raw.description).slice(0, 220);
   return {
     title,
     source,
     summary,
     link: raw.link,
     pubDate: raw.pubDate || null,
-    image: extractImage(raw),
     guid: raw.guid || raw.link,
   };
 }
@@ -710,7 +736,12 @@ function renderFeed() {
 
   feedEl.innerHTML = state.topics.map(topic => {
     const entry = state.cache[topic] || {};
-    const items = entry.items || [];
+    const rawItems = entry.items || [];
+    const ranked = rankArticles(rawItems, topic);
+    const expanded = expandedTopics.has(topic);
+    const visible = expanded ? ranked : ranked.slice(0, INITIAL_LIMIT);
+    const hiddenCount = Math.max(0, ranked.length - INITIAL_LIMIT);
+
     const statusMeta = entry.loading
       ? 'Loading…'
       : entry.error
@@ -720,14 +751,18 @@ function renderFeed() {
           : 'Not loaded';
 
     let inner;
-    if (entry.loading && items.length === 0) {
-      inner = `<div class="articles-grid">${Array(3).fill('<div class="article-skeleton"></div>').join('')}</div>`;
-    } else if (entry.error && items.length === 0) {
+    if (entry.loading && ranked.length === 0) {
+      inner = `<div class="articles-grid">${Array(4).fill('<div class="article-skeleton"></div>').join('')}</div>`;
+    } else if (entry.error && ranked.length === 0) {
       inner = `<div class="topic-error">Could not load — ${esc(entry.error)}</div>`;
-    } else if (items.length === 0) {
+    } else if (ranked.length === 0) {
       inner = `<div class="topic-empty">No articles today for this topic</div>`;
     } else {
-      inner = `<div class="articles-grid">${items.map(renderArticle).join('')}</div>`;
+      const cards = `<div class="articles-grid">${visible.map(a => renderArticle(a, topic)).join('')}</div>`;
+      const toggle = hiddenCount > 0
+        ? `<div class="show-all-wrap"><button class="show-all-btn" data-toggle="${esc(topic)}">${expanded ? '▲ Show Less' : `▼ Show All (${hiddenCount} more)`}</button></div>`
+        : '';
+      inner = cards + toggle;
     }
 
     return `
@@ -735,7 +770,7 @@ function renderFeed() {
         <div class="topic-section-head">
           <div class="topic-section-title">${esc(topic)}</div>
           <div class="topic-section-meta">
-            <span>${String(items.length).padStart(2, '0')} articles · ${statusMeta}</span>
+            <span>${String(ranked.length).padStart(2, '0')} articles · ${statusMeta}</span>
             <button class="topic-refresh" data-refresh="${esc(topic)}" ${entry.loading ? 'disabled' : ''}>↻ Refresh</button>
           </div>
         </div>
@@ -747,23 +782,26 @@ function renderFeed() {
   feedEl.querySelectorAll('.topic-refresh').forEach(btn => {
     btn.addEventListener('click', () => refreshTopic(btn.dataset.refresh, true));
   });
+  feedEl.querySelectorAll('.show-all-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const t = btn.dataset.toggle;
+      if (expandedTopics.has(t)) expandedTopics.delete(t);
+      else expandedTopics.add(t);
+      renderFeed();
+    });
+  });
 }
 
 function renderArticle(article) {
+  const tier = outletTier(article.source);
   const meta = [article.source, article.pubDate ? formatRelative(article.pubDate) : null].filter(Boolean);
-  const imageBlock = article.image
-    ? `<div class="article-image"><img src="${esc(article.image)}" alt="" loading="lazy" onerror="this.parentElement.outerHTML='<div class=&quot;article-no-image&quot;><span class=&quot;article-no-image-mark&quot;>¶</span></div>'"></div>`
-    : `<div class="article-no-image"><span class="article-no-image-mark">¶</span></div>`;
   return `
-    <a class="article-card" href="${esc(article.link)}" target="_blank" rel="noopener noreferrer">
-      ${imageBlock}
-      <div class="article-body">
-        <div class="article-meta">
-          ${meta.map((m, i) => `<span class="${i === 0 ? 'article-source' : 'article-time'}">${esc(m)}</span>`).join('')}
-        </div>
-        <div class="article-title">${esc(article.title)}</div>
-        ${article.summary ? `<div class="article-summary">${esc(article.summary)}</div>` : ''}
+    <a class="article-card" data-tier="${tier}" href="${esc(article.link)}" target="_blank" rel="noopener noreferrer">
+      <div class="article-meta">
+        ${meta.map((m, i) => `<span class="${i === 0 ? 'article-source' : 'article-time'}">${esc(m)}</span>`).join('')}
       </div>
+      <div class="article-title">${esc(article.title)}</div>
+      ${article.summary ? `<div class="article-summary">${esc(article.summary)}</div>` : ''}
     </a>
   `;
 }

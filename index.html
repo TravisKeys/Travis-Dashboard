@@ -21,11 +21,12 @@
       </div>
 
       <nav class="nav">
-        <div class="nav-section-label">Operations</div>
         <a class="nav-item active" href="#dashboard">
           <span class="nav-marker"></span>
           <span class="nav-label">Dashboard</span>
         </a>
+
+        <div class="nav-section-label">Applications</div>
         <a class="nav-item" href="apps/tasks.html">
           <span class="nav-marker"></span>
           <span class="nav-label">Task Tracker</span>
@@ -34,19 +35,9 @@
           <span class="nav-marker"></span>
           <span class="nav-label">Notes Vault</span>
         </a>
-        <a class="nav-item" href="#habits">
-          <span class="nav-marker"></span>
-          <span class="nav-label">Habit Logger</span>
-        </a>
-
-        <div class="nav-section-label">Intelligence</div>
-        <a class="nav-item" href="#finance">
-          <span class="nav-marker"></span>
-          <span class="nav-label">Finance</span>
-        </a>
         <a class="nav-item" href="#reading">
           <span class="nav-marker"></span>
-          <span class="nav-label">Reading</span>
+          <span class="nav-label">Reading List</span>
         </a>
         <a class="nav-item" href="#links">
           <span class="nav-marker"></span>
@@ -66,7 +57,6 @@
       <header class="topbar">
         <div class="brand">
           <div class="brand-mark">Daily Command</div>
-          <div class="brand-sub">Executive Ops</div>
         </div>
         <div class="topbar-right">
           <div class="header-info">
@@ -85,13 +75,36 @@
         <p class="greeting-sub">Your starting point for the day.</p>
       </section>
 
-      <section class="content">
-        <div class="section-header">
-          <div class="section-title">Applications</div>
-          <div class="section-meta" id="card-count">—</div>
-        </div>
+      <section class="dashboard-body">
+        <div class="panels-grid">
+          <section class="panel" data-tone="urgent">
+            <div class="panel-header">
+              <div class="panel-title">Today's Priorities</div>
+              <div class="panel-meta" id="priorities-count">—</div>
+            </div>
+            <div class="panel-body" id="priorities-body"></div>
+          </section>
 
-        <div class="cards" id="cards"></div>
+          <section class="panel" data-tone="today">
+            <div class="panel-header">
+              <div class="panel-title">News</div>
+              <div class="panel-meta">Coming Soon</div>
+            </div>
+            <div class="panel-body">
+              <div class="panel-empty">Feed integration pending</div>
+            </div>
+          </section>
+
+          <section class="panel" data-tone="long">
+            <div class="panel-header">
+              <div class="panel-title">Social Feed</div>
+              <div class="panel-meta">Coming Soon</div>
+            </div>
+            <div class="panel-body">
+              <div class="panel-empty">Feed integration pending</div>
+            </div>
+          </section>
+        </div>
       </section>
     </main>
   </div>

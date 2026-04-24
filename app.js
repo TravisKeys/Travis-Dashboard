@@ -1,102 +1,26 @@
-// ========== Card Definitions ==========
-// Edit this list to add/remove tools. `href` is what the card links to.
-// `tone` controls the top accent stripe color: urgent | today | week | long | accent
-const CARDS = [
-  {
-    title: 'Task Tracker',
-    desc: 'Daily directives across urgent, today, weekly, and strategic horizons.',
-    icon: '✓',
-    href: 'apps/tasks.html',
-    status: 'Live',
-    statusType: 'live',
-    tone: 'urgent',
-  },
-  {
-    title: 'Notes Vault',
-    desc: 'Rich-text notes with search, starring, and full formatting controls.',
-    icon: '✎',
-    href: 'apps/notes.html',
-    status: 'Live',
-    statusType: 'live',
-    tone: 'today',
-  },
-  {
-    title: 'Habit Logger',
-    desc: 'Track recurring habits and visualize streaks over time.',
-    icon: '◐',
-    href: '#',
-    status: 'Planned',
-    statusType: 'dev',
-    tone: 'week',
-  },
-  {
-    title: 'Finance Snapshot',
-    desc: 'Budget overview, recurring expenses, and savings targets.',
-    icon: '$',
-    href: '#',
-    status: 'Planned',
-    statusType: 'dev',
-    tone: 'long',
-  },
-  {
-    title: 'Reading List',
-    desc: 'Active reads, queued books, and highlights from past titles.',
-    icon: '❡',
-    href: '#',
-    status: 'Planned',
-    statusType: 'dev',
-    tone: 'accent',
-  },
-  {
-    title: 'Quick Links',
-    desc: 'Bookmarks and frequently-used external resources.',
-    icon: '↗',
-    href: '#',
-    status: 'Planned',
-    statusType: 'dev',
-    tone: 'today',
-  },
-];
+// ========== Storage Keys ==========
+const THEME_KEY = 'daily-command-theme';
+const TASK_STATE_KEY = 'daily-command-state-v2';
 
-// ========== Render Cards ==========
-function renderCards() {
-  const container = document.getElementById('cards');
-  container.innerHTML = CARDS.map((card, i) => `
-    <a class="card" href="${card.href}" data-tone="${card.tone || 'accent'}">
-      <div class="card-head">
-        <div class="card-icon">${card.icon}</div>
-        <div class="card-index">${String(i + 1).padStart(2, '0')} / ${String(CARDS.length).padStart(2, '0')}</div>
-      </div>
-      <h3 class="card-title">${card.title}</h3>
-      <p class="card-desc">${card.desc}</p>
-      <div class="card-footer">
-        <span class="card-status ${card.statusType || ''}">${card.status || ''}</span>
-        <span class="card-arrow">→</span>
-      </div>
-    </a>
-  `).join('');
-
-  const liveCount = CARDS.filter(c => c.statusType === 'live').length;
-  document.getElementById('card-count').textContent =
-    `${String(CARDS.length).padStart(2, '0')} TOTAL · ${String(liveCount).padStart(2, '0')} LIVE`;
+// ========== Utilities ==========
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 // ========== Date / Time ==========
 function updateDateTime() {
   const now = new Date();
-  const time = now.toLocaleTimeString('en-US', {
+  document.getElementById('time').textContent = now.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
     hour12: false,
   });
-  const date = now.toLocaleDateString('en-US', {
+  document.getElementById('date').textContent = now.toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
   });
-  document.getElementById('time').textContent = time;
-  document.getElementById('date').textContent = date;
 }
 
 // ========== Greeting ==========
@@ -111,23 +35,125 @@ function updateGreeting() {
   document.getElementById('greeting-text').textContent = greeting;
 }
 
-// ========== Theme Toggle (shared key with Daily Command) ==========
-const THEME_KEY = 'daily-command-theme';
-
+// ========== Theme ==========
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
 }
-
 function initTheme() {
   let saved = null;
   try { saved = localStorage.getItem(THEME_KEY); } catch (e) {}
   applyTheme(saved || 'dark');
 }
-
 document.getElementById('theme-toggle').addEventListener('click', () => {
   const current = document.documentElement.getAttribute('data-theme');
   applyTheme(current === 'dark' ? 'light' : 'dark');
+});
+
+// ========== Priorities Panel (Task Tracker integration) ==========
+function loadTaskState() {
+  try {
+    const raw = localStorage.getItem(TASK_STATE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveTaskState(state) {
+  try { localStorage.setItem(TASK_STATE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+function renderPriorities() {
+  const state = loadTaskState();
+  const container = document.getElementById('priorities-body');
+  const countEl = document.getElementById('priorities-count');
+
+  const urgent = state && state.tasks ? (state.tasks.urgent || []).filter(t => !t.done) : [];
+  const today  = state && state.tasks ? (state.tasks.today  || []).filter(t => !t.done) : [];
+  const total = urgent.length + today.length;
+
+  countEl.textContent = String(total).padStart(2, '0');
+
+  if (!state) {
+    container.innerHTML = `
+      <div class="panel-empty">
+        No tasks yet<br><br>
+        Open Task Tracker<br>to get started
+      </div>`;
+    return;
+  }
+
+  if (total === 0) {
+    container.innerHTML = `<div class="panel-empty">All clear<br><br>No urgent or today tasks</div>`;
+    return;
+  }
+
+  const renderTask = (task, cat) => {
+    const subCount = (task.subtasks || []).length;
+    const subLabel = subCount ? `<div class="dash-task-sub">${subCount} sub-item${subCount === 1 ? '' : 's'}</div>` : '';
+    return `
+      <div class="dash-task" data-cat="${cat}" data-id="${task.id}">
+        <div class="dash-checkbox" data-action="toggle"></div>
+        <div class="dash-task-body">
+          <div class="dash-task-text">${esc(task.text)}</div>
+          ${subLabel}
+        </div>
+      </div>
+    `;
+  };
+
+  const sections = [];
+  if (urgent.length) {
+    sections.push(`
+      <div class="dash-section">
+        <div class="dash-section-header">
+          <div class="dash-section-title urgent">Urgent · Act Now</div>
+          <div class="dash-section-count">${String(urgent.length).padStart(2, '0')}</div>
+        </div>
+        ${urgent.map(t => renderTask(t, 'urgent')).join('')}
+      </div>
+    `);
+  }
+  if (today.length) {
+    sections.push(`
+      <div class="dash-section">
+        <div class="dash-section-header">
+          <div class="dash-section-title today">Today · End of Day</div>
+          <div class="dash-section-count">${String(today.length).padStart(2, '0')}</div>
+        </div>
+        ${today.map(t => renderTask(t, 'today')).join('')}
+      </div>
+    `);
+  }
+  container.innerHTML = sections.join('');
+
+  container.querySelectorAll('.dash-task').forEach(el => {
+    el.addEventListener('click', () => completeTask(el.dataset.cat, el.dataset.id));
+  });
+}
+
+function completeTask(category, taskId) {
+  const state = loadTaskState();
+  if (!state || !state.tasks || !state.tasks[category]) return;
+  const idx = state.tasks[category].findIndex(t => t.id === taskId);
+  if (idx === -1) return;
+
+  const task = state.tasks[category][idx];
+  task.done = true;
+  if (!state.archive) state.archive = [];
+  state.archive.unshift({ ...task, category, completedAt: new Date().toISOString() });
+  state.tasks[category].splice(idx, 1);
+
+  saveTaskState(state);
+  renderPriorities();
+}
+
+// Stay in sync when Task Tracker edits tasks in another tab
+window.addEventListener('storage', e => {
+  if (e.key === TASK_STATE_KEY) renderPriorities();
+  if (e.key === THEME_KEY && e.newValue) applyTheme(e.newValue);
 });
 
 // ========== Nav Active State ==========
@@ -142,8 +168,9 @@ document.querySelectorAll('.nav-item').forEach(item => {
 
 // ========== Init ==========
 initTheme();
-renderCards();
 updateDateTime();
 updateGreeting();
+renderPriorities();
 setInterval(updateDateTime, 1000);
 setInterval(updateGreeting, 60000);
+setInterval(renderPriorities, 30000);

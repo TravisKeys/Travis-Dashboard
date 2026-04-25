@@ -513,6 +513,7 @@
   <section class="feed" id="feed"></section>
 </div>
 
+<script src="../sync.js"></script>
 <script>
 // ============ Storage ============
 const STATE_KEY = 'pulse-state-v1';
@@ -981,7 +982,10 @@ window.addEventListener('storage', e => {
 });
 
 // ============ Init ============
-function init() {
+async function init() {
+  if (window.cloudSync && window.cloudSync.ready) {
+    try { await window.cloudSync.ready; } catch (e) {}
+  }
   initTheme();
   loadState();
   // Sync filter button active state with loaded filter

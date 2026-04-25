@@ -719,6 +719,7 @@
   </div>
 </div>
 
+<script src="../sync.js"></script>
 <script>
 // Persistent localStorage wrapper — replaces the prior window.storage API.
 const storage = {
@@ -1151,7 +1152,10 @@ document.getElementById('pomoStart').addEventListener('click',()=>{
 
 document.getElementById('pomoReset').addEventListener('click',()=>{clearInterval(pomoState.interval);pomoState.running=false;pomoState.remaining=pomoModes[pomoState.mode].duration;renderPomo();});
 
-function init(){
+async function init(){
+  if (window.cloudSync && window.cloudSync.ready) {
+    try { await window.cloudSync.ready; } catch (e) {}
+  }
   const tr = storage.get('daily-command-theme');
   const savedTheme = (tr && tr.value) ? tr.value : 'dark';
   document.documentElement.setAttribute('data-theme', savedTheme);

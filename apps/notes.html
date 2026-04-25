@@ -672,6 +672,7 @@
   </main>
 </div>
 
+<script src="../sync.js"></script>
 <script>
 // ============ Storage ============
 const storage = {
@@ -1079,7 +1080,10 @@ searchClear.addEventListener('click', () => {
 });
 
 // ============ Init ============
-function init() {
+async function init() {
+  if (window.cloudSync && window.cloudSync.ready) {
+    try { await window.cloudSync.ready; } catch (e) {}
+  }
   initTheme();
   loadState();
   if (!state.activeId && state.notes.length) state.activeId = state.notes[0].id;

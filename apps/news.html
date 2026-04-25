@@ -509,6 +509,7 @@
   </section>
 </div>
 
+<script src="../sync.js"></script>
 <script>
 // ============ Storage ============
 const STATE_KEY = 'news-brief-state-v1';
@@ -850,7 +851,10 @@ window.addEventListener('storage', e => {
 });
 
 // ============ Init ============
-function init() {
+async function init() {
+  if (window.cloudSync && window.cloudSync.ready) {
+    try { await window.cloudSync.ready; } catch (e) {}
+  }
   initTheme();
   loadState();
   renderChips();

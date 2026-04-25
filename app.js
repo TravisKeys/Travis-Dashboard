@@ -329,14 +329,20 @@ document.querySelectorAll('.nav-item').forEach(item => {
 });
 
 // ========== Init ==========
-initTheme();
-updateDateTime();
-updateGreeting();
-renderPriorities();
-renderNewsPreview();
-renderPulsePreview();
-setInterval(updateDateTime, 1000);
-setInterval(updateGreeting, 60000);
-setInterval(renderPriorities, 30000);
-setInterval(renderNewsPreview, 60000);
-setInterval(renderPulsePreview, 60000);
+async function init() {
+  if (window.cloudSync && window.cloudSync.ready) {
+    try { await window.cloudSync.ready; } catch (e) {}
+  }
+  initTheme();
+  updateDateTime();
+  updateGreeting();
+  renderPriorities();
+  renderNewsPreview();
+  renderPulsePreview();
+  setInterval(updateDateTime, 1000);
+  setInterval(updateGreeting, 60000);
+  setInterval(renderPriorities, 30000);
+  setInterval(renderNewsPreview, 60000);
+  setInterval(renderPulsePreview, 60000);
+}
+init();
